@@ -17,10 +17,11 @@ const COLUMNS: { key: TaskStatus; label: string; color: string }[] = [
 ]
 
 export default function TaskBoard({ date, tasks, allTasks, onClose, onTasksChange }: Props) {
-  const [inputText, setInputText] = useState('')
-  const [addingTo, setAddingTo] = useState<TaskStatus | null>(null)
-  const [dragId, setDragId] = useState<string | null>(null)
+  const [inputText, setInputText]   = useState('')
+  const [addingTo, setAddingTo]     = useState<TaskStatus | null>(null)
+  const [dragId, setDragId]         = useState<string | null>(null)
   const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null)
+  const [saving, setSaving]         = useState(false)
 
   const displayDate = (() => {
     const [y, m, d] = date.split('-').map(Number)
@@ -30,27 +31,37 @@ export default function TaskBoard({ date, tasks, allTasks, onClose, onTasksChang
   const tasksByStatus = (status: TaskStatus) => tasks.filter(t => t.status === status)
 
   /* ── 추가 ── */
-  function handleAdd(status: TaskStatus) {
-    if (!inputText.trim()) return
-    onTasksChange(addTask(allTasks, inputText.trim(), date, status))
+  async function handleAdd(status: TaskStatus) {
+    if (!inputText.trim() || saving) return
+    setSaving(true)
+    const updated = await addTask(allTasks, inputText.trim(), date, status)
+    onTasksChange(updated)
     setInputText('')
     setAddingTo(null)
+    setSaving(false)
   }
 
   /* ── 삭제 ── */
-  function handleDelete(id: string) {
-    onTasksChange(deleteTask(allTasks, id))
+  async function handleDelete(id: string) {
+    if (saving) return
+    setSaving(true)
+    const updated = await deleteTask(allTasks, id)
+    onTasksChange(updated)
+    setSaving(false)
   }
 
   /* ── 드래그앤드롭 ── */
   function onDragStart(id: string) { setDragId(id) }
   function onDragEnd() { setDragId(null); setDragOverCol(null) }
 
-  function onDrop(status: TaskStatus) {
-    if (!dragId) return
-    onTasksChange(updateTaskStatus(allTasks, dragId, status))
+  async function onDrop(status: TaskStatus) {
+    if (!dragId || saving) return
+    setSaving(true)
+    const updated = await updateTaskStatus(allTasks, dragId, status)
+    onTasksChange(updated)
     setDragId(null)
     setDragOverCol(null)
+    setSaving(false)
   }
 
   return (
@@ -60,7 +71,10 @@ export default function TaskBoard({ date, tasks, allTasks, onClose, onTasksChang
         {/* 헤더 */}
         <div className="board-header">
           <h2 className="board-date">{displayDate} 일정</h2>
-          <button className="board-close" onClick={onClose}>✕</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {saving && <span className="saving-indicator">저장 중...</span>}
+            <button className="board-close" onClick={onClose}>✕</button>
+          </div>
         </div>
 
         {/* 칸반 컬럼 */}
@@ -70,7 +84,7 @@ export default function TaskBoard({ date, tasks, allTasks, onClose, onTasksChang
               key={col.key}
               className={`board-col ${dragOverCol === col.key ? 'drag-over' : ''}`}
               onDragOver={e => { e.preventDefault(); setDragOverCol(col.key) }}
-              onDragLeave={() => setDragOverCol(null)}
+              onDragLeave={() => setDragOverCol(col.key === dragOverCol ? null : dragOverCol)}
               onDrop={() => onDrop(col.key)}
             >
               {/* 컬럼 헤더 */}
@@ -95,6 +109,7 @@ export default function TaskBoard({ date, tasks, allTasks, onClose, onTasksChang
                       className="task-delete"
                       onClick={() => handleDelete(task.id)}
                       title="삭제"
+                      disabled={saving}
                     >✕</button>
                   </div>
                 ))}
@@ -112,14 +127,17 @@ export default function TaskBoard({ date, tasks, allTasks, onClose, onTasksChang
                         if (e.key === 'Enter') handleAdd(col.key)
                         if (e.key === 'Escape') { setAddingTo(null); setInputText('') }
                       }}
+                      disabled={saving}
                     />
                     <div className="task-input-actions">
-                      <button className="btn-confirm" onClick={() => handleAdd(col.key)}>추가</button>
-                      <button className="btn-cancel" onClick={() => { setAddingTo(null); setInputText('') }}>취소</button>
+                      <button className="btn-confirm" onClick={() => handleAdd(col.key)} disabled={saving}>
+                        {saving ? '저장 중' : '추가'}
+                      </button>
+                      <button className="btn-cancel" onClick={() => { setAddingTo(null); setInputText('') }} disabled={saving}>취소</button>
                     </div>
                   </div>
                 ) : (
-                  <button className="btn-add-task" onClick={() => setAddingTo(col.key)}>
+                  <button className="btn-add-task" onClick={() => setAddingTo(col.key)} disabled={saving}>
                     + 일정 추가
                   </button>
                 )}

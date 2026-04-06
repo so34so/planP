@@ -11,6 +11,49 @@
 }
 
 /* ═══════════════════════════════
+   로딩
+═══════════════════════════════ */
+.loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 200px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: var(--text);
+  font-size: 15px;
+  margin: 0;
+}
+
+.saving-indicator {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ═══════════════════════════════
    달력
 ═══════════════════════════════ */
 .calendar {
@@ -315,6 +358,9 @@
   opacity: 1;
   color: #ef4444;
 }
+.task-delete:disabled {
+  cursor: not-allowed;
+}
 
 /* ═══════════════════════════════
    태스크 입력
@@ -337,6 +383,9 @@
   outline: none;
   font-family: inherit;
 }
+.task-input:disabled {
+  opacity: 0.6;
+}
 
 .task-input-actions {
   display: flex;
@@ -356,6 +405,7 @@
   transition: opacity 0.2s;
 }
 .btn-confirm:hover { opacity: 0.85; }
+.btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-cancel {
   flex: 1;
@@ -369,6 +419,7 @@
   transition: background 0.2s;
 }
 .btn-cancel:hover { background: var(--accent-bg); }
+.btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-add-task {
   width: 100%;
@@ -385,4 +436,8 @@
 .btn-add-task:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+.btn-add-task:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
